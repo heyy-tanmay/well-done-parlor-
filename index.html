@@ -1,257 +1,1478 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welldone Beauty Parlour - Premium Beauty Services</title>
-    <link rel="stylesheet" href="styles.css">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>HABITCORE v3.1 — Data Log Edition</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet"/>
+<style>
+
+/* ╔══════════════════════════════════════════════════╗
+   ║  DESIGN TOKENS                                   ║
+   ╚══════════════════════════════════════════════════╝ */
+:root {
+  /* Core Palette */
+  --bg:           #0b0d10;
+  --bg-2:         #0e1116;
+  --bg-3:         #131720;
+  --bg-card:      #0f1218;
+  --bg-raised:    #171c26;
+
+  /* Signal Colors */
+  --neon:         #00ff9d;
+  --neon-20:      rgba(0,255,157,0.20);
+  --neon-10:      rgba(0,255,157,0.10);
+  --neon-05:      rgba(0,255,157,0.05);
+  --neon-glow:    0 0 8px #00ff9d, 0 0 22px rgba(0,255,157,0.45), 0 0 45px rgba(0,255,157,0.18);
+  --neon-glow-sm: 0 0 5px #00ff9d, 0 0 14px rgba(0,255,157,0.4);
+
+  --red:          #ff2a6d;
+  --red-20:       rgba(255,42,109,0.20);
+  --red-10:       rgba(255,42,109,0.10);
+  --red-glow:     0 0 8px #ff2a6d, 0 0 22px rgba(255,42,109,0.4);
+
+  --cyan:         #05d9e8;
+  --cyan-20:      rgba(5,217,232,0.20);
+  --cyan-glow:    0 0 8px #05d9e8, 0 0 22px rgba(5,217,232,0.4);
+
+  --amber:        #ffc857;
+  --amber-20:     rgba(255,200,87,0.20);
+
+  /* Text Scale */
+  --text:         #c8d0e0;
+  --text-dim:     #7a8599;
+  --text-muted:   #5a6070;
+  --text-ghost:   #333b4d;
+
+  /* Structure */
+  --border:       rgba(255,255,255,0.055);
+  --border-neon:  rgba(0,255,157,0.28);
+  --border-red:   rgba(255,42,109,0.28);
+
+  /* Typography */
+  --font-hud:     'Orbitron',   monospace;
+  --font-data:    'Space Mono', monospace;
+
+  /* Shape */
+  --r:            6px;
+  --r-lg:         10px;
+}
+
+/* ╔══════════════════════════════════════════════════╗
+   ║  RESET & BASE                                    ║
+   ╚══════════════════════════════════════════════════╝ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-data);
+  font-size: 13px;
+  line-height: 1.5;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+button { font-family: inherit; cursor: pointer; }
+input  { font-family: inherit; }
+svg    { display: block; }
+
+/* ╔══════════════════════════════════════════════════╗
+   ║  AMBIENT FX                                      ║
+   ╚══════════════════════════════════════════════════╝ */
+.scanlines {
+  position: fixed; inset: 0; pointer-events: none; z-index: 9990;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    rgba(0,0,0,0.055) 2px, rgba(0,0,0,0.055) 4px
+  );
+}
+.grid-bg {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background-image:
+    linear-gradient(rgba(0,255,157,0.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,255,157,0.022) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+.vignette {
+  position: fixed; inset: 0; pointer-events: none; z-index: 1;
+  background: radial-gradient(ellipse at 50% 0%, transparent 30%, rgba(0,0,0,0.65) 100%);
+}
+
+/* ╔══════════════════════════════════════════════════╗
+   ║  LAYOUT SHELL                                    ║
+   ╚══════════════════════════════════════════════════╝ */
+#app {
+  position: relative; z-index: 2;
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  min-height: 100vh;
+}
+
+/* ╔══════════════════════════════════════════════════╗
+   ║  HEADER / HUD                                    ║
+   ╚══════════════════════════════════════════════════╝ */
+.hud {
+  position: sticky; top: 0; z-index: 500;
+  background: rgba(11,13,16,0.93);
+  backdrop-filter: blur(24px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 28px;
+}
+.hud::after {
+  content: '';
+  position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent 0%, var(--neon) 35%, var(--cyan) 65%, transparent 100%);
+  opacity: 0.35;
+  animation: hudLine 6s ease-in-out infinite;
+}
+@keyframes hudLine { 0%,100%{opacity:0.2} 50%{opacity:0.5} }
+
+.hud-row {
+  display: flex; align-items: center; gap: 18px;
+  padding: 12px 0; flex-wrap: wrap;
+}
+
+/* Brand */
+.brand {
+  display: flex; align-items: center; gap: 9px;
+  flex-shrink: 0; text-decoration: none;
+}
+.brand-hex {
+  font-size: 20px; color: var(--neon);
+  text-shadow: var(--neon-glow);
+  animation: hexBreath 4s ease-in-out infinite;
+}
+@keyframes hexBreath { 0%,100%{text-shadow: 0 0 6px var(--neon)} 50%{text-shadow: var(--neon-glow)} }
+.brand-name {
+  font-family: var(--font-hud); font-size: 13px; font-weight: 900;
+  letter-spacing: 0.18em; color: var(--neon);
+  text-shadow: var(--neon-glow-sm);
+}
+.brand-tag {
+  font-size: 8px; color: var(--text-muted);
+  background: var(--bg-3); border: 1px solid var(--border);
+  padding: 2px 6px; border-radius: 2px; letter-spacing: 0.12em;
+}
+
+/* Level pill */
+.level-pill {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--neon-10); border: 1px solid var(--border-neon);
+  border-radius: var(--r); padding: 5px 12px;
+  box-shadow: var(--neon-glow-sm); flex-shrink: 0;
+}
+.level-pill-lbl { font-size: 8px; color: var(--text-muted); letter-spacing: 0.25em; font-family: var(--font-hud); }
+.level-pill-val { font-family: var(--font-hud); font-size: 18px; font-weight: 900; color: var(--neon); line-height: 1; text-shadow: var(--neon-glow-sm); }
+
+/* XP bar */
+.xp-wrap { flex: 1; min-width: 120px; }
+.xp-meta { display: flex; justify-content: space-between; margin-bottom: 5px; }
+.xp-meta span { font-family: var(--font-hud); font-size: 7.5px; letter-spacing: 0.14em; color: var(--text-dim); }
+.xp-track {
+  height: 9px; background: var(--bg-3); border-radius: 5px;
+  border: 1px solid var(--border); overflow: hidden; position: relative;
+}
+.xp-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #00b870, var(--neon));
+  border-radius: 5px; transition: width 0.7s cubic-bezier(0.4,0,0.2,1);
+  position: relative; z-index: 1;
+}
+.xp-bar::after {
+  content: ''; position: absolute; right: 0; top: 0; bottom: 0; width: 18px;
+  background: rgba(255,255,255,0.45); filter: blur(4px);
+}
+
+/* Credits chip */
+.credits-chip {
+  display: flex; align-items: center; gap: 7px;
+  background: var(--cyan-20); border: 1px solid rgba(5,217,232,0.3);
+  border-radius: var(--r); padding: 6px 13px;
+  box-shadow: var(--cyan-glow); flex-shrink: 0;
+}
+.credits-chip .icon { font-size: 14px; }
+.credits-chip .val {
+  font-family: var(--font-hud); font-size: 15px; font-weight: 700;
+  color: var(--cyan); text-shadow: var(--cyan-glow);
+}
+
+/* ╔══════════════════════════════════════════════════╗
+   ║  DASHBOARD GRID                                  ║
+   ╚══════════════════════════════════════════════════╝ */
+.dashboard {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto;
+  gap: 16px;
+  padding: 20px 28px;
+  align-items: start;
+}
+
+/* ── Column spans ── */
+.col-left  { display: flex; flex-direction: column; gap: 16px; }
+.col-right { display: flex; flex-direction: column; gap: 16px; }
+
+/* ── Card base ── */
+.panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  position: relative;
+}
+.panel-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.panel-title {
+  font-family: var(--font-hud); font-size: 8.5px; font-weight: 700;
+  letter-spacing: 0.28em; color: var(--text-dim); display: flex; align-items: center; gap: 8px;
+}
+.panel-title::before { content: '▸'; color: var(--neon); font-size: 10px; }
+.panel-body { padding: 16px 18px; }
+
+/* ╔══════════════════════════════════════════════════╗
+   ║  WEEKLY XP CHART  (the hero widget)              ║
+   ╚══════════════════════════════════════════════════╝ */
+.chart-panel { grid-column: 1; }
+
+.chart-meta {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 18px; flex-wrap: wrap; gap: 8px;
+}
+.chart-today-xp {
+  display: flex; flex-direction: column;
+}
+.chart-today-xp .big {
+  font-family: var(--font-hud); font-size: 30px; font-weight: 900;
+  color: var(--neon); text-shadow: var(--neon-glow);
+  line-height: 1;
+}
+.chart-today-xp .sub {
+  font-size: 9px; color: var(--text-muted); letter-spacing: 0.18em; margin-top: 3px;
+}
+.chart-legend {
+  display: flex; flex-direction: column; gap: 5px; align-items: flex-end;
+}
+.legend-row {
+  display: flex; align-items: center; gap: 6px; font-size: 9px; color: var(--text-muted);
+}
+.legend-dot {
+  width: 8px; height: 8px; border-radius: 2px;
+}
+.legend-dot.past    { background: var(--text-ghost); }
+.legend-dot.present { background: var(--neon); box-shadow: 0 0 5px var(--neon); }
+
+/* Bar chart */
+.bar-chart {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  height: 140px;
+  gap: 6px;
+  padding: 0 2px;
+  position: relative;
+}
+
+/* Horizontal guide lines */
+.bar-chart::before {
+  content: '';
+  position: absolute; left: 0; right: 0;
+  top: 0; bottom: 24px;           /* 24px = label zone */
+  background:
+    linear-gradient(var(--border) 1px, transparent 1px) 0 0 / 100% 25% no-repeat,
+    linear-gradient(var(--border) 1px, transparent 1px) 0 0 / 100% 50% no-repeat,
+    linear-gradient(var(--border) 1px, transparent 1px) 0 0 / 100% 75% no-repeat;
+  pointer-events: none;
+}
+
+.bar-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 1;
+  height: 100%;
+  gap: 0;
+  position: relative;
+}
+
+/* XP tooltip on hover */
+.bar-col:hover .bar-tip { opacity: 1; transform: translateY(0); }
+
+.bar-tip {
+  position: absolute; bottom: calc(100% - 22px);
+  left: 50%; transform: translateX(-50%) translateY(4px);
+  background: var(--bg-raised); border: 1px solid var(--border);
+  border-radius: 4px; padding: 3px 7px;
+  font-family: var(--font-hud); font-size: 8px; color: var(--text);
+  white-space: nowrap; pointer-events: none;
+  opacity: 0; transition: opacity 0.2s, transform 0.2s;
+  z-index: 10;
+}
+
+.bar-wrap {
+  width: 100%;
+  display: flex; align-items: flex-end; justify-content: center;
+  height: calc(100% - 24px);      /* bar area, exclude label */
+  position: relative;
+}
+
+.bar {
+  width: 70%;
+  border-radius: 3px 3px 0 0;
+  min-height: 3px;
+  transition: height 0.7s cubic-bezier(0.4,0,0.2,1);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Past bar */
+.bar.past {
+  background: var(--text-ghost);
+  box-shadow: none;
+}
+.bar.past::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, transparent 100%);
+}
+
+/* Today bar */
+.bar.today {
+  background: linear-gradient(180deg, var(--neon) 0%, #00cc7a 100%);
+  box-shadow: 0 0 10px rgba(0,255,157,0.5), 0 0 25px rgba(0,255,157,0.2);
+  animation: todayGlow 2.5s ease-in-out infinite;
+}
+.bar.today::after {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 35%;
+  background: rgba(255,255,255,0.22);
+}
+@keyframes todayGlow {
+  0%,100% { box-shadow: 0 0 8px rgba(0,255,157,0.5), 0 0 20px rgba(0,255,157,0.18); }
+  50%     { box-shadow: 0 0 14px rgba(0,255,157,0.7), 0 0 35px rgba(0,255,157,0.35); }
+}
+
+/* Zero-day bar (no data) */
+.bar.empty-day {
+  background: var(--bg-3);
+  border: 1px dashed var(--text-ghost);
+  border-bottom: none;
+  min-height: 5px;
+  box-shadow: none;
+}
+
+/* Tick line on today */
+.bar-col.is-today .bar-wrap::after {
+  content: '';
+  position: absolute; bottom: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 1px; height: 100%;
+  background: linear-gradient(180deg, transparent, rgba(0,255,157,0.15));
+}
+
+.bar-label {
+  height: 24px; display: flex; flex-direction: column;
+  align-items: center; justify-content: flex-start;
+  gap: 1px; padding-top: 4px;
+}
+.bar-day {
+  font-family: var(--font-hud); font-size: 7.5px;
+  letter-spacing: 0.12em; color: var(--text-muted);
+}
+.bar-col.is-today .bar-day { color: var(--neon); font-weight: 700; }
+
+/* Streak comparison badge */
+.comparison-strip {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 14px; padding-top: 12px;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap; gap: 10px;
+}
+.comp-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.comp-val {
+  font-family: var(--font-hud); font-size: 16px; font-weight: 700;
+  line-height: 1;
+}
+.comp-val.neon  { color: var(--neon); }
+.comp-val.dim   { color: var(--text-dim); }
+.comp-val.amber { color: var(--amber); }
+.comp-lbl { font-size: 8px; color: var(--text-muted); letter-spacing: 0.15em; }
+
+.delta-badge {
+  display: flex; align-items: center; gap: 5px;
+  padding: 5px 12px; border-radius: 20px;
+  font-family: var(--font-hud); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.1em;
+}
+.delta-badge.up   { background: var(--neon-10); border: 1px solid var(--border-neon); color: var(--neon); }
+.delta-badge.down { background: var(--red-10);  border: 1px solid var(--border-red);  color: var(--red); }
+.delta-badge.flat { background: var(--bg-3);    border: 1px solid var(--border);      color: var(--text-dim); }
+
+/* ╔══════════════════════════════════════════════════╗
+   ║  STATS STRIP                                     ║
+   ╚══════════════════════════════════════════════════╝ */
+.stats-strip {
+  display: grid; grid-template-columns: repeat(3,1fr); gap: 10px;
+}
+.stat-box {
+  background: var(--bg-3); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 12px 10px; text-align: center;
+  transition: border-color 0.2s;
+}
+.stat-box:hover { border-color: var(--border-neon); }
+.stat-val {
+  font-family: var(--font-hud); font-size: 22px; font-weight: 900;
+  color: var(--neon); text-shadow: 0 0 10px rgba(0,255,157,0.45);
+  display: block; line-height: 1;
+}
+.stat-lbl {
+  font-family: var(--font-hud); font-size: 7px;
+  letter-spacing: 0.22em; color: var(--text-muted); margin-top: 5px;
+  display: block;
+}
+
+/* ╔══════════════════════════════════════════════════╗
+   ║  BOSS PANEL                                      ║
+   ╚══════════════════════════════════════════════════╝ */
+.boss-panel {
+  border-color: var(--border-red) !important;
+  box-shadow: 0 0 25px rgba(255,42,109,0.07);
+}
+.boss-panel::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(255,42,109,0.05) 0%, transparent 60%);
+  pointer-events: none;
+}
+.boss-inner { padding: 16px 18px; }
+.boss-row   { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+.boss-id    { display: flex; align-items: center; gap: 10px; }
+.boss-icon  { font-size: 28px; filter: drop-shadow(0 0 8px var(--red)); animation: skullPulse 2s ease-in-out infinite; }
+@keyframes skullPulse { 0%,100%{filter:drop-shadow(0 0 5px var(--red))} 50%{filter:drop-shadow(0 0 14px var(--red))} }
+.boss-name  { font-family: var(--font-hud); font-size: 15px; font-weight: 900; color: var(--red); text-shadow: var(--red-glow); letter-spacing: 0.1em; display: block; }
+.boss-tier  { font-size: 9px; color: var(--text-muted); letter-spacing: 0.18em; display: block; margin-top: 2px; }
+.boss-hp-num { font-family: var(--font-hud); font-size: 12px; color: var(--red); letter-spacing: 0.06em; }
+.boss-bar-track {
+  height: 12px; background: var(--bg-3); border-radius: 6px;
+  overflow: hidden; border: 1px solid rgba(255,42,109,0.18);
+}
+.boss-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #6a0020, var(--red), #ff7097);
+  border-radius: 6px;
+  transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+  position: relative;
+}
+.boss-bar-fill::after {
+  content: '';
+  position: absolute; right: 0; top: 0; bottom: 0; width: 24px;
+  background: rgba(255,255,255,0.35); filter: blur(5px);
+}
+.boss-taunt { margin-top: 10px; font-size: 10px; color: var(--text-muted); font-style: italic; text-align: center; line-height: 1.5; }
+.boss-panel.shake { animation: bossShake 0.4s ease; }
+@keyframes bossShake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-5px) rotate(-0.4deg)} 40%{transform:translateX(5px) rotate(0.4deg)} 60%{transform:translateX(-3px)} 80%{transform:translateX(3px)} }
+
+/* ╔══════════════════════════════════════════════════╗
+   ║  HABITS PANEL                                    ║
+   ╚══════════════════════════════════════════════════╝ */
+.add-row { display: flex; gap: 9px; padding: 12px 18px; border-bottom: 1px solid var(--border); }
+.h-input {
+  flex: 1; background: var(--bg-3); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 9px 13px; color: var(--text);
+  font-size: 13px; outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.h-input::placeholder { color: var(--text-muted); font-style: italic; }
+.h-input:focus { border-color: var(--border-neon); box-shadow: 0 0 0 1px var(--neon-10); }
+.btn-add {
+  display: flex; align-items: center; gap: 6px;
+  padding: 9px 16px; background: var(--neon); color: #0b0d10;
+  border: none; border-radius: var(--r);
+  font-family: var(--font-hud); font-size: 9px; font-weight: 700;
+  letter-spacing: 0.14em; white-space: nowrap;
+  box-shadow: 0 0 12px rgba(0,255,157,0.35);
+  transition: transform 0.1s, box-shadow 0.2s;
+}
+.btn-add:hover { box-shadow: var(--neon-glow); }
+.btn-add:active { transform: scale(0.93); }
+
+.habits-list { padding: 10px 10px 14px; display: flex; flex-direction: column; gap: 6px; }
+
+/* Empty state */
+.empty-st {
+  padding: 36px 20px; text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+.empty-icon { font-size: 36px; opacity: 0.25; animation: emFloat 3s ease-in-out infinite; }
+@keyframes emFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+.empty-t { font-family: var(--font-hud); font-size: 11px; letter-spacing: 0.18em; color: var(--text-dim); }
+.empty-s { font-size: 11px; color: var(--text-muted); }
+
+/* Habit card */
+.habit-card {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg-3); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 11px 12px;
+  transition: border-color 0.25s, box-shadow 0.25s, transform 0.15s;
+  position: relative; overflow: hidden;
+  animation: cardIn 0.28s ease-out;
+}
+@keyframes cardIn { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+.habit-card::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  border-radius: var(--r) 0 0 var(--r);
+  background: var(--bg-raised); transition: background 0.25s, box-shadow 0.25s;
+}
+.habit-card:hover { border-color: rgba(255,255,255,0.09); transform: translateX(2px); }
+.habit-card.done {
+  border-color: var(--border-neon);
+  background: linear-gradient(135deg, var(--bg-3), rgba(0,255,157,0.04));
+}
+.habit-card.done::before { background: var(--neon); box-shadow: 0 0 8px var(--neon); }
+.habit-card.done { animation: doneGlow 3s ease-in-out infinite; }
+@keyframes doneGlow { 0%,100%{box-shadow:0 0 12px rgba(0,255,157,0.06)} 50%{box-shadow:0 0 22px rgba(0,255,157,0.14)} }
+
+.h-dot {
+  width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0;
+  border: 2px solid var(--text-muted); background: transparent;
+  transition: all 0.25s;
+}
+.habit-card.done .h-dot {
+  background: var(--neon); border-color: var(--neon);
+  box-shadow: 0 0 7px var(--neon), 0 0 14px rgba(0,255,157,0.4);
+}
+.h-info { flex: 1; min-width: 0; }
+.h-name {
+  font-size: 13px; font-weight: 700; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  display: block; transition: color 0.25s;
+}
+.habit-card.done .h-name { color: var(--neon); text-shadow: 0 0 8px rgba(0,255,157,0.35); }
+.h-meta { font-size: 9.5px; color: var(--text-muted); margin-top: 2px; display: flex; align-items: center; gap: 5px; }
+.h-streak-fire { filter: drop-shadow(0 0 3px rgba(255,160,0,0.7)); }
+
+.h-earned {
+  font-family: var(--font-hud); font-size: 8px; font-weight: 700;
+  letter-spacing: 0.08em; color: var(--neon);
+  background: var(--neon-10); border: 1px solid var(--border-neon);
+  padding: 3px 8px; border-radius: 4px;
+  animation: earnedIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes earnedIn { from{opacity:0;transform:scale(0.3)} to{opacity:1;transform:scale(1)} }
+
+.btn-check {
+  width: 34px; height: 34px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: transparent; border: 1.5px solid var(--border-neon);
+  border-radius: var(--r); color: var(--neon);
+  transition: transform 0.1s, background 0.2s, box-shadow 0.2s;
+}
+.btn-check:hover { background: var(--neon-10); box-shadow: var(--neon-glow-sm); }
+.btn-check:active { transform: scale(0.87); }
+
+.btn-del {
+  width: 26px; height: 26px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: transparent; border: 1px solid transparent;
+  border-radius: 4px; color: var(--text-muted);
+  transition: all 0.18s;
+}
+.btn-del:hover { color: var(--red); border-color: var(--border-red); background: var(--red-10); }
+.btn-del:active { transform: scale(0.9); }
+
+/* ╔══════════════════════════════════════════════════╗
+   ║  SHOP FAB                                        ║
+   ╚══════════════════════════════════════════════════╝ */
+.shop-fab {
+  position: fixed; bottom: 24px; right: 24px; z-index: 600;
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 20px; background: rgba(5,217,232,0.12);
+  border: 1px solid rgba(5,217,232,0.38); border-radius: 28px;
+  color: var(--cyan); font-family: var(--font-hud);
+  font-size: 9px; font-weight: 700; letter-spacing: 0.15em;
+  box-shadow: var(--cyan-glow), 0 8px 28px rgba(0,0,0,0.5);
+  transition: transform 0.2s, box-shadow 0.2s;
+  animation: fabPulse 4s ease-in-out infinite;
+}
+@keyframes fabPulse { 0%,100%{box-shadow:var(--cyan-glow)} 50%{box-shadow:0 0 20px var(--cyan),0 0 50px rgba(5,217,232,0.3)} }
+.shop-fab:hover { transform: translateY(-3px) scale(1.04); }
+.shop-fab:active { transform: scale(0.95); }
+
+/* ╔══════════════════════════════════════════════════╗
+   ║  MODALS                                          ║
+   ╚══════════════════════════════════════════════════╝ */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 2000;
+  background: rgba(0,0,0,0.82); backdrop-filter: blur(14px);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+  opacity: 0; pointer-events: none; transition: opacity 0.28s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+
+.modal-box {
+  background: var(--bg-2); border: 1px solid var(--border);
+  border-radius: 12px; width: 100%; max-width: 500px;
+  max-height: 88vh; overflow: hidden;
+  transform: scale(0.8) translateY(28px);
+  transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+  position: relative; display: flex; flex-direction: column;
+}
+.modal-overlay.open .modal-box { transform: scale(1) translateY(0); }
+.modal-box::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+}
+
+.modal-header {
+  padding: 24px 28px 0; flex-shrink: 0;
+}
+.modal-title {
+  font-family: var(--font-hud); font-size: 18px; font-weight: 900;
+  letter-spacing: 0.18em; text-align: center;
+}
+.modal-sub {
+  font-size: 10px; color: var(--text-dim); text-align: center;
+  letter-spacing: 0.12em; margin-top: 4px;
+}
+.modal-close {
+  position: absolute; top: 12px; right: 12px;
+  width: 30px; height: 30px; background: var(--bg-3);
+  border: 1px solid var(--border); border-radius: 5px;
+  color: var(--text-dim); font-size: 17px; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  transition: color 0.18s, background 0.18s; cursor: pointer;
+}
+.modal-close:hover { color: var(--red); background: var(--red-10); }
+
+.modal-scroll { overflow-y: auto; padding: 20px 28px 28px; flex: 1; }
+
+/* Shop balance bar */
+.shop-bal {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  background: var(--cyan-20); border: 1px solid rgba(5,217,232,0.25);
+  border-radius: var(--r); padding: 10px; margin-bottom: 20px;
+}
+.shop-bal-lbl { font-size: 10px; color: var(--text-dim); letter-spacing: 0.1em; }
+.shop-bal-val { font-family: var(--font-hud); font-size: 17px; font-weight: 700; color: var(--cyan); }
+
+.shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media(max-width:460px){ .shop-grid{grid-template-columns:1fr;} }
+
+.shop-item {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 14px;
+  display: flex; flex-direction: column; gap: 7px;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+}
+.shop-item:hover { border-color: rgba(5,217,232,0.3); box-shadow: 0 0 18px rgba(5,217,232,0.07); transform: translateY(-2px); }
+.shop-item-head { display: flex; align-items: center; gap: 9px; }
+.shop-item-icon { font-size: 22px; }
+.shop-item-name { font-family: var(--font-hud); font-size: 9px; font-weight: 700; letter-spacing: 0.1em; color: var(--text); }
+.shop-item-desc { font-size: 10px; color: var(--text-dim); line-height: 1.45; }
+.shop-item-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 3px; }
+.shop-item-cost { font-family: var(--font-hud); font-size: 12px; font-weight: 700; color: var(--cyan); }
+.btn-buy {
+  padding: 5px 12px;
+  background: var(--cyan-20); border: 1px solid rgba(5,217,232,0.3);
+  border-radius: 4px; color: var(--cyan);
+  font-family: var(--font-hud); font-size: 8px; font-weight: 700; letter-spacing: 0.1em;
+  transition: all 0.2s;
+}
+.btn-buy:hover { background: rgba(5,217,232,0.28); box-shadow: var(--cyan-glow); }
+.btn-buy:active { transform: scale(0.93); }
+.btn-buy:disabled { opacity: 0.28; cursor: not-allowed; transform: none; }
+
+/* Level up modal */
+.lu-body {
+  text-align: center; padding: 44px 36px;
+  border-color: var(--border-neon) !important;
+  box-shadow: 0 0 60px rgba(0,255,157,0.12) !important;
+}
+.lu-body::before { background: linear-gradient(90deg,transparent,var(--neon),transparent) !important; }
+.lu-glow-bg {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse at 50% 0%, rgba(0,255,157,0.08) 0%, transparent 65%);
+}
+.lu-scanline {
+  position: absolute; top: 0; left: -100%; width: 100%; height: 2px;
+  background: linear-gradient(90deg,transparent,var(--neon),transparent);
+  animation: luscan 2.2s linear infinite;
+}
+@keyframes luscan { from{left:-100%} to{left:200%} }
+.lu-title {
+  font-family: var(--font-hud); font-size: 34px; font-weight: 900;
+  letter-spacing: 0.22em; color: var(--neon); text-shadow: var(--neon-glow);
+  animation: luGlitch 0.5s steps(3) infinite;
+}
+@keyframes luGlitch {
+  0%,100%{text-shadow:var(--neon-glow);transform:skewX(0)}
+  33%{text-shadow:3px 0 var(--cyan),-3px 0 var(--red),var(--neon-glow);transform:skewX(-2deg)}
+  66%{text-shadow:-3px 0 var(--cyan),3px 0 var(--red),var(--neon-glow);transform:skewX(2deg)}
+}
+.lu-pill {
+  display: inline-flex; align-items: center; gap: 12px;
+  background: var(--neon-10); border: 1px solid var(--border-neon);
+  border-radius: var(--r); padding: 13px 26px;
+  margin: 18px 0 8px; box-shadow: var(--neon-glow);
+}
+.lu-num { font-family: var(--font-hud); font-size: 34px; font-weight: 900; color: var(--neon); text-shadow: var(--neon-glow); }
+.lu-sub { font-family: var(--font-hud); font-size: 8px; letter-spacing: 0.3em; color: var(--text-dim); margin-bottom: 26px; }
+.lu-bars { display: flex; gap: 7px; justify-content: center; margin-bottom: 26px; }
+.lu-bar {
+  width: 44px; height: 3px; background: var(--neon); border-radius: 2px;
+  box-shadow: 0 0 8px var(--neon); animation: luBarGrow 0.45s cubic-bezier(0.4,0,0.2,1) both;
+  transform-origin: left;
+}
+@keyframes luBarGrow { from{transform:scaleX(0)} to{transform:scaleX(1)} }
+.btn-lu-close {
+  padding: 12px 30px; background: var(--neon); color: #0b0d10;
+  border: none; border-radius: var(--r);
+  font-family: var(--font-hud); font-size: 9px; font-weight: 900; letter-spacing: 0.2em;
+  box-shadow: var(--neon-glow); transition: transform 0.1s, box-shadow 0.2s;
+}
+.btn-lu-close:hover { box-shadow: 0 0 28px rgba(0,255,157,0.7); }
+.btn-lu-close:active { transform: scale(0.94); }
+
+/* ╔══════════════════════════════════════════════════╗
+   ║  TOAST                                           ║
+   ╚══════════════════════════════════════════════════╝ */
+.toast-wrap {
+  position: fixed; top: 85px; right: 18px; z-index: 5000;
+  display: flex; flex-direction: column; gap: 7px; pointer-events: none;
+}
+.toast {
+  background: var(--bg-2); border-left: 3px solid var(--neon);
+  border-radius: var(--r); padding: 9px 14px;
+  font-family: var(--font-hud); font-size: 9px; letter-spacing: 0.1em;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.5); color: var(--text);
+  animation: toastIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both,
+             toastOut 0.3s ease 2.6s both;
+}
+.toast.warn { border-color: var(--red); }
+.toast.gold { border-color: var(--amber); }
+@keyframes toastIn  { from{opacity:0;transform:translateX(36px)} to{opacity:1;transform:translateX(0)} }
+@keyframes toastOut { from{opacity:1;transform:translateX(0)} to{opacity:0;transform:translateX(36px)} }
+
+/* ╔══════════════════════════════════════════════════╗
+   ║  RESPONSIVE                                      ║
+   ╚══════════════════════════════════════════════════╝ */
+@media (max-width: 720px) {
+  .dashboard { grid-template-columns: 1fr; }
+  .col-left, .col-right { gap: 14px; }
+  .hud { padding: 0 16px; }
+  .hud-row { gap: 12px; }
+  .dashboard { padding: 14px 16px; gap: 14px; }
+  .brand-name { font-size: 11px; }
+  .credits-chip .val { font-size: 13px; }
+}
+@media (max-width: 440px) {
+  .stats-strip { grid-template-columns: 1fr 1fr; }
+  .lu-title { font-size: 24px; }
+  .lu-num { font-size: 26px; }
+  .shop-fab { bottom: 14px; right: 14px; padding: 11px 15px; }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--bg-3); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0,255,157,0.35); }
+</style>
 </head>
 <body>
-    <!-- Navigation Bar -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="nav-logo">
-                <span class="logo-icon">✨</span>
-                <span>Welldone Beauty</span>
-            </div>
-            <div class="hamburger" id="hamburger">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-            <ul class="nav-menu" id="navMenu">
-                <li><a href="#home" class="nav-link">Home</a></li>
-                <li><a href="#services" class="nav-link">Services</a></li>
-                <li><a href="#testimonials" class="nav-link">Testimonials</a></li>
-                <li><a href="#contact" class="nav-link">Contact</a></li>
-            </ul>
+
+<!-- Ambient overlays -->
+<div class="scanlines"></div>
+<div class="grid-bg"></div>
+<div class="vignette"></div>
+
+<!-- Toast container -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- ═══════════════════════════════════════
+     APP SHELL
+═══════════════════════════════════════ -->
+<div id="app">
+
+  <!-- ── HUD HEADER ── -->
+  <header class="hud">
+    <div class="hud-row">
+      <div class="brand">
+        <span class="brand-hex">⬡</span>
+        <span class="brand-name">HABITCORE</span>
+        <span class="brand-tag">v3.1 · DATA LOG</span>
+      </div>
+      <div class="level-pill">
+        <span class="level-pill-lbl">LVL</span>
+        <span class="level-pill-val" id="lvlVal">1</span>
+      </div>
+      <div class="xp-wrap">
+        <div class="xp-meta">
+          <span>EXPERIENCE</span>
+          <span id="xpLabel">0 / 100 XP</span>
         </div>
-    </nav>
-
-    <!-- Hero Section -->
-    <section class="hero" id="home">
-        <div class="hero-content">
-            <h1>Enhance Your Natural Beauty</h1>
-            <p>Experience premium beauty services in a luxurious atmosphere</p>
-            <button class="cta-button">Book Now</button>
+        <div class="xp-track">
+          <div class="xp-bar" id="xpBar" style="width:0%"></div>
         </div>
-    </section>
+      </div>
+      <div class="credits-chip">
+        <span class="icon">💰</span>
+        <span class="val" id="creditsVal">0¢</span>
+      </div>
+    </div>
+  </header>
 
-    <!-- Services Section -->
-    <section class="services" id="services">
-        <div class="services-container">
-            <h2>Our Premium Services</h2>
-            <p class="services-intro">Discover our comprehensive range of beauty treatments</p>
+  <!-- ── DASHBOARD ── -->
+  <div class="dashboard">
 
-            <!-- Hair Services -->
-            <div class="service-category">
-                <div class="category-header">
-                    <h3>💇 Hair Services</h3>
-                </div>
-                <div class="pricing-cards">
-                    <div class="pricing-card">
-                        <h4>Haircut</h4>
-                        <div class="service-type">
-                            <span class="type-badge">Men</span>
-                            <span class="price">₹399</span>
-                        </div>
-                        <div class="service-type">
-                            <span class="type-badge">Women</span>
-                            <span class="price">₹599</span>
-                        </div>
-                    </div>
-                    <div class="pricing-card">
-                        <h4>Hair Styling</h4>
-                        <p class="service-desc">Professional styling for any occasion</p>
-                        <span class="price">₹799</span>
-                    </div>
-                    <div class="pricing-card">
-                        <h4>Hair Coloring</h4>
-                        <div class="service-type">
-                            <span class="type-badge">Root Touch-up</span>
-                            <span class="price">₹1,299</span>
-                        </div>
-                        <div class="service-type">
-                            <span class="type-badge">Full Color</span>
-                            <span class="price">₹2,499</span>
-                        </div>
-                    </div>
-                    <div class="pricing-card">
-                        <h4>Keratin Treatment</h4>
-                        <p class="service-desc">Smooth, silky hair guaranteed</p>
-                        <span class="price">₹3,999</span>
-                    </div>
-                </div>
-            </div>
+    <!-- LEFT COLUMN -->
+    <div class="col-left">
 
-            <!-- Skin Services -->
-            <div class="service-category">
-                <div class="category-header">
-                    <h3>🧖 Skin Services</h3>
-                </div>
-                <div class="pricing-cards">
-                    <div class="pricing-card">
-                        <h4>Facial</h4>
-                        <div class="service-type">
-                            <span class="type-badge">Basic</span>
-                            <span class="price">₹799</span>
-                        </div>
-                        <div class="service-type">
-                            <span class="type-badge">Premium</span>
-                            <span class="price">₹1,499</span>
-                        </div>
-                    </div>
-                    <div class="pricing-card">
-                        <h4>Bleach</h4>
-                        <div class="service-type">
-                            <span class="type-badge">Face</span>
-                            <span class="price">₹499</span>
-                        </div>
-                        <div class="service-type">
-                            <span class="type-badge">Full Body</span>
-                            <span class="price">₹1,299</span>
-                        </div>
-                    </div>
-                    <div class="pricing-card">
-                        <h4>Cleanup</h4>
-                        <p class="service-desc">Deep cleanse and purify</p>
-                        <span class="price">₹599</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Body Services -->
-            <div class="service-category">
-                <div class="category-header">
-                    <h3>💅 Body Services</h3>
-                </div>
-                <div class="pricing-cards">
-                    <div class="pricing-card">
-                        <h4>Manicure</h4>
-                        <div class="service-type">
-                            <span class="type-badge">Basic</span>
-                            <span class="price">₹399</span>
-                        </div>
-                        <div class="service-type">
-                            <span class="type-badge">Gel</span>
-                            <span class="price">₹899</span>
-                        </div>
-                    </div>
-                    <div class="pricing-card">
-                        <h4>Pedicure</h4>
-                        <div class="service-type">
-                            <span class="type-badge">Basic</span>
-                            <span class="price">₹499</span>
-                        </div>
-                        <div class="service-type">
-                            <span class="type-badge">Gel</span>
-                            <span class="price">₹999</span>
-                        </div>
-                    </div>
-                    <div class="pricing-card">
-                        <h4>Waxing</h4>
-                        <div class="service-type">
-                            <span class="type-badge">Upper Lip</span>
-                            <span class="price">₹199</span>
-                        </div>
-                        <div class="service-type">
-                            <span class="type-badge">Full Body</span>
-                            <span class="price">₹1,999</span>
-                        </div>
-                    </div>
-                    <div class="pricing-card">
-                        <h4>Massage</h4>
-                        <p class="service-desc">Relaxation for 60 minutes</p>
-                        <span class="price">₹1,499</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Bridal Services -->
-            <div class="service-category">
-                <div class="category-header special-header">
-                    <h3>💒 Bridal Packages</h3>
-                </div>
-                <div class="pricing-cards">
-                    <div class="pricing-card premium">
-                        <h4>Bridal Makeup</h4>
-                        <p class="service-desc">Full bridal makeup with trial</p>
-                        <span class="price">₹5,999</span>
-                    </div>
-                    <div class="pricing-card premium">
-                        <h4>Bridal Complete Package</h4>
-                        <p class="service-desc">Makeup + Hair + Body Treatment</p>
-                        <span class="price">₹12,999</span>
-                    </div>
-                    <div class="pricing-card premium">
-                        <h4>Bridal Party Package</h4>
-                        <p class="service-desc">For 4-5 people (customizable)</p>
-                        <span class="price">₹19,999</span>
-                    </div>
-                </div>
-            </div>
+      <!-- WEEKLY XP CHART -->
+      <div class="panel chart-panel">
+        <div class="panel-head">
+          <span class="panel-title">XP · 7-DAY DATA LOG</span>
+          <span style="font-family:var(--font-hud);font-size:8px;color:var(--text-muted);letter-spacing:0.12em" id="weekRange">—</span>
         </div>
-    </section>
+        <div class="panel-body">
+          <div class="chart-meta">
+            <div class="chart-today-xp">
+              <span class="big" id="todayXpBig">0</span>
+              <span class="sub">TODAY'S XP</span>
+            </div>
+            <div class="chart-legend">
+              <div class="legend-row"><div class="legend-dot past"></div> PAST DAYS</div>
+              <div class="legend-row"><div class="legend-dot present"></div> TODAY (LIVE)</div>
+            </div>
+          </div>
 
-    <!-- Testimonials Section -->
-    <section class="testimonials" id="testimonials">
-        <div class="testimonials-container">
-            <h2>What Our Clients Say</h2>
-            <div class="testimonial-cards">
-                <div class="testimonial-card">
-                    <div class="stars">⭐⭐⭐⭐⭐</div>
-                    <p>"The team at Radiant Beauty transformed my look for my wedding. The attention to detail was impeccable!"</p>
-                    <h4>- Priya Sharma</h4>
-                </div>
-                <div class="testimonial-card">
-                    <div class="stars">⭐⭐⭐⭐⭐</div>
-                    <p>"Best haircut and styling I've ever had. The stylists are truly professionals. Highly recommended!"</p>
-                    <h4>- Anjali Verma</h4>
-                </div>
-                <div class="testimonial-card">
-                    <div class="stars">⭐⭐⭐⭐⭐</div>
-                    <p>"The facial treatment left my skin glowing. Very hygenic and relaxing environment. Will be back!"</p>
-                    <h4>- Neha Patel</h4>
-                </div>
-            </div>
-        </div>
-    </section>
+          <!-- THE BAR CHART -->
+          <div class="bar-chart" id="barChart">
+            <!-- Populated by JS -->
+          </div>
 
-    <!-- Footer -->
-    <footer class="footer" id="contact">
-        <div class="footer-content">
-            <div class="footer-section">
-                <h4>Welldone Beauty</h4>
-                <p>Your destination for premium beauty services</p>
+          <!-- COMPARISON STRIP -->
+          <div class="comparison-strip">
+            <div class="comp-item">
+              <span class="comp-val neon" id="cmpToday">0</span>
+              <span class="comp-lbl">TODAY XP</span>
             </div>
-            <div class="footer-section">
-                <h4>Quick Links</h4>
-                <ul>
-                    <li><a href="#home">Home</a></li>
-                    <li><a href="#services">Services</a></li>
-                    <li><a href="#testimonials">Testimonials</a></li>
-                </ul>
+            <div class="delta-badge flat" id="deltaBadge">── FLAT</div>
+            <div class="comp-item">
+              <span class="comp-val dim" id="cmpYest">0</span>
+              <span class="comp-lbl">YESTERDAY</span>
             </div>
-            <div class="footer-section">
-                <h4>Contact Info</h4>
-                <p>📞 +91-XXXXXXXXXX</p>
-                <p>📍 123 Beauty Lane, City Center</p>
-                <p>✉️ info@radiantbeauty.com</p>
+            <div class="comp-item">
+              <span class="comp-val amber" id="cmpPeak">0</span>
+              <span class="comp-lbl">PEAK THIS WK</span>
             </div>
-            <div class="footer-section">
-                <h4>Follow Us</h4>
-                <div class="social-links">
-                    <a href="#">Facebook</a>
-                    <a href="#">Instagram</a>
-                    <a href="#">Twitter</a>
-                </div>
-            </div>
+          </div>
         </div>
-        <div class="footer-bottom">
-            <p>&copy; 2026 Welldone Beauty Parlour. All rights reserved.</p>
-        </div>
-    </footer>
+      </div>
 
-    <script src="script.js"></script>
+      <!-- STATS STRIP -->
+      <div class="stats-strip">
+        <div class="stat-box"><span class="stat-val" id="stTotal">0</span><span class="stat-lbl">PROTOCOLS</span></div>
+        <div class="stat-box"><span class="stat-val" id="stDone">0</span><span class="stat-lbl">DONE TODAY</span></div>
+        <div class="stat-box"><span class="stat-val" id="stStreak">0</span><span class="stat-lbl">BEST STREAK</span></div>
+      </div>
+
+    </div><!-- /col-left -->
+
+    <!-- RIGHT COLUMN -->
+    <div class="col-right">
+
+      <!-- BOSS PANEL -->
+      <div class="panel boss-panel" id="bossPanel">
+        <div class="panel-head">
+          <span class="panel-title" style="color:var(--text-dim)">THREAT TARGET</span>
+        </div>
+        <div class="boss-inner">
+          <div class="boss-row">
+            <div class="boss-id">
+              <span class="boss-icon" id="bossIcon">☠</span>
+              <div>
+                <span class="boss-name" id="bossName">GLITCH.EXE</span>
+                <span class="boss-tier" id="bossTier">THREAT LEVEL: ALPHA</span>
+              </div>
+            </div>
+            <span class="boss-hp-num" id="bossHpNum">500 / 500</span>
+          </div>
+          <div class="boss-bar-track"><div class="boss-bar-fill" id="bossBar" style="width:100%"></div></div>
+          <div class="boss-taunt" id="bossTaunt">"Your discipline is an illusion."</div>
+        </div>
+      </div>
+
+      <!-- HABITS PANEL -->
+      <div class="panel">
+        <div class="add-row">
+          <input class="h-input" id="habitInput" type="text"
+            placeholder="New protocol name..." maxlength="55"/>
+          <button class="btn-add" id="deployBtn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            DEPLOY
+          </button>
+        </div>
+        <div class="panel-head" style="border-top:none">
+          <span class="panel-title">ACTIVE PROTOCOLS</span>
+          <span style="font-family:var(--font-hud);font-size:9px;color:var(--neon);
+            background:var(--neon-10);border:1px solid var(--border-neon);
+            padding:2px 9px;border-radius:10px;" id="habBadge">0/0</span>
+        </div>
+        <div class="habits-list" id="habitsList"></div>
+      </div>
+
+    </div><!-- /col-right -->
+  </div><!-- /dashboard -->
+
+</div><!-- /app -->
+
+<!-- SHOP FAB -->
+<button class="shop-fab" id="shopFab">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+    <line x1="3" y1="6" x2="21" y2="6"/>
+    <path d="M16 10a4 4 0 01-8 0"/>
+  </svg>
+  BLACK MARKET
+</button>
+
+<!-- ── LEVEL UP MODAL ── -->
+<div class="modal-overlay" id="luModal">
+  <div class="modal-box lu-body">
+    <div class="lu-glow-bg"></div>
+    <div class="lu-scanline"></div>
+    <button class="modal-close" id="luClose">×</button>
+    <div class="lu-title">LEVEL UP</div>
+    <div style="font-size:14px;color:var(--neon);margin:6px 0 0;letter-spacing:0.2em">▲▲▲</div>
+    <div class="lu-pill">
+      <span style="font-family:var(--font-hud);font-size:12px;color:var(--text-dim);letter-spacing:0.1em">LVL</span>
+      <span class="lu-num" id="luNum">2</span>
+    </div>
+    <div class="lu-sub">SYSTEM UPGRADE COMPLETE</div>
+    <div class="lu-bars" id="luBars"></div>
+    <button class="btn-lu-close" id="luContinue">CONTINUE ▶</button>
+  </div>
+</div>
+
+<!-- ── SHOP MODAL ── -->
+<div class="modal-overlay" id="shopModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <button class="modal-close" id="shopClose">×</button>
+      <div class="modal-title" style="color:var(--cyan)">⬡ BLACK MARKET</div>
+      <div class="modal-sub">SPEND CREDITS — REWARD YOUR DISCIPLINE</div>
+    </div>
+    <div class="modal-scroll">
+      <div class="shop-bal">
+        <span class="shop-bal-lbl">BALANCE:</span>
+        <span class="shop-bal-val" id="shopBal">0¢</span>
+      </div>
+      <div class="shop-grid" id="shopGrid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     ENGINE
+══════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+/* ─────────────────────────── CONSTANTS ─────────────────────────── */
+const XP_PER_HABIT      = 20;
+const CREDITS_PER_HABIT = 10;
+const BOSS_DAMAGE       = 50;
+const BASE_BOSS_HP      = 500;
+const BOSS_HP_SCALE     = 200;
+const BOSS_KILL_CREDITS = 100;
+
+const BOSS_NAMES   = ['GLITCH.EXE','BYTE_DAEMON','NULL.PTR','VOID.WALKER','ENTROPY_BOT','MALWARE.KING','CHAOS.ENGINE','PHANTOM.SYS','DARK_KERNEL','SHADOW.ROOT'];
+const BOSS_TAUNTS  = ['"Your discipline is an illusion."','"Every skipped habit feeds me."','"I live in your procrastination."','"You cannot defeat what dwells inside."','"Your streak dies tonight."','"Flesh is weak. Concede."','"Another wasted day. Delicious."','"I am every habit you never built."'];
+const BOSS_ICONS   = ['☠','👾','💀','🕷️','🦠','👁️','⚡','🔮'];
+const THREAT_LVLS  = ['ALPHA','BETA','GAMMA','DELTA','EPSILON','ZETA','OMEGA','APEX','ULTRA','GOD'];
+
+const SHOP_ITEMS = [
+  { id:'cheat_meal',  icon:'🍕', name:'CHEAT MEAL.EXE',  desc:'Load junk food. Zero guilt protocol.',     cost:50  },
+  { id:'gaming',      icon:'🎮', name:'GAMING.RUN',      desc:'60-min entertainment subroutine.',          cost:100 },
+  { id:'cinema',      icon:'🎬', name:'CINEMA.BOOT',     desc:'Stream a movie. Neural rest mode.',         cost:150 },
+  { id:'sleep',       icon:'😴', name:'SLEEP.EXE',       desc:'Extra rest cycle. No alarm protocol.',      cost:75  },
+  { id:'scroll',      icon:'📱', name:'DOOM.SCROLL',     desc:'30 min social feed. Guilt deactivated.',   cost:30  },
+  { id:'coffee',      icon:'☕', name:'CAFFEINE.INJECT', desc:'Premium fuel injection. Treat yourself.',   cost:40  },
+  { id:'weekend',     icon:'🏖️', name:'VACATION.SYS',   desc:'Full weekend offline. Earned rest mode.',  cost:400 },
+  { id:'dessert',     icon:'🍰', name:'SUGAR.RUSH',      desc:'Dessert reward protocol. Sweet victory.',   cost:60  },
+];
+
+const DAY_ABBR = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+
+/* ─────────────────────────── AUDIO ENGINE ─────────────────────────── */
+let _audioCtx = null;
+const Audio = {
+  ctx() {
+    if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (_audioCtx.state === 'suspended') _audioCtx.resume();
+    return _audioCtx;
+  },
+  tone(freq, type, start, dur, vol = 0.22) {
+    const ctx = this.ctx();
+    const osc = ctx.createOscillator(), g = ctx.createGain();
+    osc.connect(g); g.connect(ctx.destination);
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
+    g.gain.setValueAtTime(0, ctx.currentTime + start);
+    g.gain.linearRampToValueAtTime(vol, ctx.currentTime + start + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + dur);
+    osc.start(ctx.currentTime + start);
+    osc.stop(ctx.currentTime + start + dur + 0.05);
+  },
+  success() {
+    [[523,'sine',0,0.32],[659,'sine',0.08,0.28],[784,'sine',0.16,0.28],[1047,'sine',0.24,0.45]]
+      .forEach(([f,t,s,d]) => this.tone(f,t,s,d,0.2));
+  },
+  bossHit() {
+    const ctx = this.ctx(), osc = ctx.createOscillator(), g = ctx.createGain();
+    osc.connect(g); g.connect(ctx.destination);
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(200, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + 0.32);
+    g.gain.setValueAtTime(0.3, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.32);
+    osc.start(); osc.stop(ctx.currentTime + 0.36);
+  },
+  levelUp() {
+    [[261,'square',0,0.22,0.16],[329,'square',0.07,0.22,0.16],[392,'square',0.14,0.22,0.16],
+     [523,'square',0.21,0.3,0.16],[659,'sine',0.28,0.38,0.18],[784,'sine',0.34,0.5,0.18]]
+      .forEach(([f,t,s,d,v]) => this.tone(f,t,s,d,v));
+  },
+  cash() {
+    this.tone(1200,'sine',0,0.14,0.22);
+    this.tone(1600,'sine',0.11,0.18,0.26);
+    this.tone(2000,'sine',0.2,0.22,0.2);
+  },
+  error() { this.tone(200,'square',0,0.13,0.18); this.tone(150,'square',0.13,0.18,0.18); }
+};
+
+/* ─────────────────────────── STATE ─────────────────────────── */
+function emptyState() {
+  return { habits:[], credits:0, level:1, xp:0, bossHP:BASE_BOSS_HP, bossMaxHP:BASE_BOSS_HP, bossLevel:0, history:[], lastVisit:null };
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem('habitcore_v31');
+    return raw ? { ...emptyState(), ...JSON.parse(raw) } : emptyState();
+  } catch { return emptyState(); }
+}
+
+let S = loadState();
+
+function save() {
+  try { localStorage.setItem('habitcore_v31', JSON.stringify(S)); } catch {}
+}
+
+function maxXP(lvl) { return Math.floor(100 * Math.pow(1.2, lvl - 1)); }
+
+/* ─────────────────────────── DATE HELPERS ─────────────────────────── */
+function todayStr() { return new Date().toDateString(); }
+
+function dateKey(d) {
+  // d = Date object → 'Mon', 'Tue', etc. (we store 7-entry rolling array)
+  return DAY_ABBR[d.getDay()];
+}
+
+function getLast7Dates() {
+  const arr = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    arr.push({ date: d.toDateString(), label: DAY_ABBR[d.getDay()] });
+  }
+  return arr;
+}
+
+/* ─────────────────────────── DAILY RESET ─────────────────────────── */
+function dailyReset() {
+  const today = todayStr();
+  if (S.lastVisit === today) return;
+
+  // Ensure history has a slot for today
+  ensureHistoryToday();
+
+  // If a day was missed, fill in the gap with 0s
+  if (S.lastVisit) {
+    fillHistoryGaps(S.lastVisit, today);
+  }
+
+  // Reset completions
+  S.habits.forEach(h => { h.completed = false; });
+
+  S.lastVisit = today;
+  save();
+}
+
+function ensureHistoryToday() {
+  const today = todayStr();
+  const label = DAY_ABBR[new Date().getDay()];
+  const existing = S.history.find(e => e.date === today);
+  if (!existing) {
+    S.history.push({ date: today, label, xp: 0 });
+    // Keep only last 30 days to avoid bloat
+    if (S.history.length > 30) S.history.shift();
+  }
+}
+
+function fillHistoryGaps(lastVisitStr, todayStr) {
+  // Walk from day after lastVisit to day before today
+  const start = new Date(lastVisitStr);
+  const end   = new Date(todayStr);
+  start.setDate(start.getDate() + 1);
+  while (start < end) {
+    const ds = start.toDateString();
+    const lb = DAY_ABBR[start.getDay()];
+    if (!S.history.find(e => e.date === ds)) {
+      S.history.push({ date: ds, label: lb, xp: 0 });
+    }
+    start.setDate(start.getDate() + 1);
+  }
+}
+
+function addXPToHistory(amount) {
+  const today = todayStr();
+  ensureHistoryToday();
+  const entry = S.history.find(e => e.date === today);
+  if (entry) { entry.xp = (entry.xp || 0) + amount; }
+}
+
+function getTodayHistoryXP() {
+  const entry = S.history.find(e => e.date === todayStr());
+  return entry ? (entry.xp || 0) : 0;
+}
+
+/* ─────────────────────────── CHART RENDER ─────────────────────────── */
+function renderChart() {
+  const last7   = getLast7Dates();   // [{date, label}, ...]
+  const today   = todayStr();
+  const chart   = document.getElementById('barChart');
+
+  // Map history to date → xp
+  const histMap = {};
+  S.history.forEach(e => { histMap[e.date] = e.xp || 0; });
+
+  // Gather XP values for the 7-slot window
+  const values  = last7.map(d => d.date === today ? getTodayHistoryXP() : (histMap[d.date] || 0));
+  const maxVal  = Math.max(...values, 1);    // avoid div-by-zero; min 1
+
+  // Build bars
+  chart.innerHTML = '';
+  last7.forEach((d, i) => {
+    const isToday = d.date === today;
+    const xpVal   = values[i];
+    const pct     = Math.max(isToday && xpVal === 0 ? 2 : (xpVal / maxVal) * 100, isToday ? 3 : 2);
+
+    const col = document.createElement('div');
+    col.className = 'bar-col' + (isToday ? ' is-today' : '');
+
+    const barClass = isToday ? 'bar today' : (xpVal === 0 ? 'bar empty-day' : 'bar past');
+
+    col.innerHTML = `
+      <div class="bar-tip">${xpVal} XP</div>
+      <div class="bar-wrap">
+        <div class="${barClass}" style="height:${pct}%"></div>
+      </div>
+      <div class="bar-label">
+        <span class="bar-day">${d.label}</span>
+      </div>`;
+    chart.appendChild(col);
+  });
+
+  // Today XP big display
+  const todayXP = getTodayHistoryXP();
+  document.getElementById('todayXpBig').textContent = todayXP;
+  document.getElementById('cmpToday').textContent   = todayXP;
+
+  // Yesterday XP
+  const yesterdayDate = new Date(); yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+  const yesterdayXP   = histMap[yesterdayDate.toDateString()] || 0;
+  document.getElementById('cmpYest').textContent = yesterdayXP;
+
+  // Peak this week
+  const weekXPs    = values.slice(0, 6); // past 6 days (not today)
+  const peakXP     = Math.max(...weekXPs, 0);
+  document.getElementById('cmpPeak').textContent = peakXP;
+
+  // Delta badge
+  const delta = todayXP - yesterdayXP;
+  const badge = document.getElementById('deltaBadge');
+  if (delta > 0) {
+    badge.className = 'delta-badge up';
+    badge.textContent = `▲ +${delta} AHEAD`;
+  } else if (delta < 0) {
+    badge.className = 'delta-badge down';
+    badge.textContent = `▼ ${delta} BEHIND`;
+  } else {
+    badge.className = 'delta-badge flat';
+    badge.textContent = '── FLAT';
+  }
+
+  // Week range label
+  const first = last7[0].label, last = last7[6].label;
+  document.getElementById('weekRange').textContent = `${first} — ${last}`;
+}
+
+/* ─────────────────────────── HEADER RENDER ─────────────────────────── */
+function renderHeader() {
+  const mx  = maxXP(S.level);
+  const pct = Math.min((S.xp / mx) * 100, 100).toFixed(1);
+  document.getElementById('lvlVal').textContent    = S.level;
+  document.getElementById('xpBar').style.width     = pct + '%';
+  document.getElementById('xpLabel').textContent   = `${S.xp} / ${mx} XP`;
+  document.getElementById('creditsVal').textContent = S.credits + '¢';
+}
+
+/* ─────────────────────────── BOSS RENDER ─────────────────────────── */
+function renderBoss() {
+  const bIdx = S.bossLevel % BOSS_NAMES.length;
+  const pct  = Math.max(0, (S.bossHP / S.bossMaxHP) * 100);
+  document.getElementById('bossIcon').textContent    = BOSS_ICONS[bIdx % BOSS_ICONS.length];
+  document.getElementById('bossName').textContent    = BOSS_NAMES[bIdx];
+  document.getElementById('bossTier').textContent    = `THREAT LEVEL: ${THREAT_LVLS[Math.min(S.bossLevel, THREAT_LVLS.length-1)]}`;
+  document.getElementById('bossHpNum').textContent   = `${Math.max(0,S.bossHP)} / ${S.bossMaxHP}`;
+  document.getElementById('bossBar').style.width     = pct + '%';
+  document.getElementById('bossTaunt').textContent   = BOSS_TAUNTS[S.bossLevel % BOSS_TAUNTS.length];
+}
+
+/* ─────────────────────────── STATS RENDER ─────────────────────────── */
+function renderStats() {
+  const done  = S.habits.filter(h => h.completed).length;
+  const best  = S.habits.reduce((m,h) => Math.max(m, h.streak||0), 0);
+  document.getElementById('stTotal').textContent  = S.habits.length;
+  document.getElementById('stDone').textContent   = done;
+  document.getElementById('stStreak').textContent = best;
+  document.getElementById('habBadge').textContent = `${done}/${S.habits.length}`;
+}
+
+/* ─────────────────────────── HABITS RENDER ─────────────────────────── */
+function renderHabits() {
+  const list = document.getElementById('habitsList');
+  list.innerHTML = '';
+
+  if (!S.habits.length) {
+    list.innerHTML = `<div class="empty-st">
+      <div class="empty-icon">◈</div>
+      <div class="empty-t">NO PROTOCOLS LOADED</div>
+      <div class="empty-s">Deploy your first habit to begin combat</div>
+    </div>`;
+    return;
+  }
+
+  S.habits.forEach(h => {
+    const card = document.createElement('div');
+    card.className = 'habit-card' + (h.completed ? ' done' : '');
+    card.dataset.id = h.id;
+
+    const streakHTML = h.streak > 0
+      ? `<span class="h-streak-fire">🔥</span><span>${h.streak}d streak</span>`
+      : `<span style="color:var(--text-muted)">Start your streak</span>`;
+
+    const rightHTML = h.completed
+      ? `<div class="h-earned">+${XP_PER_HABIT}XP +${CREDITS_PER_HABIT}¢</div>`
+      : `<button class="btn-check" data-action="check" data-id="${h.id}">
+           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+             <polyline points="20 6 9 17 4 12"/>
+           </svg>
+         </button>`;
+
+    card.innerHTML = `
+      <div class="h-dot"></div>
+      <div class="h-info">
+        <span class="h-name">${esc(h.name)}</span>
+        <div class="h-meta">${streakHTML}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:7px;flex-shrink:0">
+        ${rightHTML}
+        <button class="btn-del" data-action="delete" data-id="${h.id}">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>`;
+    list.appendChild(card);
+  });
+}
+
+/* ─────────────────────────── FULL RENDER ─────────────────────────── */
+function render() {
+  renderHeader();
+  renderBoss();
+  renderStats();
+  renderHabits();
+  renderChart();
+}
+
+/* ─────────────────────────── GAME LOGIC ─────────────────────────── */
+function addHabit(name) {
+  if (!name.trim()) return;
+  S.habits.unshift({ id: Date.now(), name: name.trim(), completed: false, streak: 0, lastDone: null });
+  save(); render();
+}
+
+function deleteHabit(id) {
+  S.habits = S.habits.filter(h => h.id !== id);
+  save(); render();
+}
+
+function completeHabit(id) {
+  const h = S.habits.find(x => x.id === id);
+  if (!h || h.completed) return;
+
+  // Streak logic
+  const today = todayStr();
+  const yest  = new Date(); yest.setDate(yest.getDate()-1);
+  h.streak    = h.lastDone === yest.toDateString() ? (h.streak||0)+1 : 1;
+  h.completed = true;
+  h.lastDone  = today;
+
+  // XP
+  let newXP = S.xp + XP_PER_HABIT, leveled = false;
+  while (newXP >= maxXP(S.level)) { newXP -= maxXP(S.level); S.level++; leveled = true; }
+  S.xp      = newXP;
+  S.credits += CREDITS_PER_HABIT;
+
+  // Update history FIRST so chart reflects immediately
+  addXPToHistory(XP_PER_HABIT);
+
+  // Boss damage
+  S.bossHP -= BOSS_DAMAGE;
+  const panel = document.getElementById('bossPanel');
+  panel.classList.remove('shake'); void panel.offsetWidth; panel.classList.add('shake');
+  setTimeout(() => panel.classList.remove('shake'), 450);
+  Audio.bossHit();
+
+  const bossDied = S.bossHP <= 0;
+  if (bossDied) S.bossHP = 0;
+
+  Audio.success();
+  if (leveled) setTimeout(() => { Audio.levelUp(); showLevelUp(); }, 260);
+
+  save(); render();
+
+  if (bossDied) setTimeout(() => killBoss(), 500);
+}
+
+function killBoss() {
+  S.credits += BOSS_KILL_CREDITS;
+  S.bossLevel++;
+  const newMax = BASE_BOSS_HP + S.bossLevel * BOSS_HP_SCALE;
+  S.bossMaxHP = newMax; S.bossHP = newMax;
+  save(); render();
+  toast(`⚡ BOSS DEFEATED! +${BOSS_KILL_CREDITS}¢ BONUS`, 'gold');
+  toast(`⚠ NEW THREAT: ${BOSS_NAMES[S.bossLevel % BOSS_NAMES.length]}`, 'warn');
+}
+
+/* ─────────────────────────── LEVEL UP MODAL ─────────────────────────── */
+function showLevelUp() {
+  document.getElementById('luNum').textContent = S.level;
+  const bars = document.getElementById('luBars');
+  bars.innerHTML = '';
+  for (let i=0;i<6;i++) {
+    const b=document.createElement('div'); b.className='lu-bar';
+    b.style.animationDelay = (i*0.07)+'s'; bars.appendChild(b);
+  }
+  openModal('luModal');
+  toast(`⚡ LEVEL ${S.level} ACHIEVED!`);
+}
+
+/* ─────────────────────────── SHOP ─────────────────────────── */
+function renderShop() {
+  document.getElementById('shopBal').textContent = S.credits + '¢';
+  const grid = document.getElementById('shopGrid');
+  grid.innerHTML = '';
+  SHOP_ITEMS.forEach(item => {
+    const ok = S.credits >= item.cost;
+    const el = document.createElement('div'); el.className='shop-item';
+    el.innerHTML = `
+      <div class="shop-item-head"><span class="shop-item-icon">${item.icon}</span><span class="shop-item-name">${item.name}</span></div>
+      <div class="shop-item-desc">${item.desc}</div>
+      <div class="shop-item-foot">
+        <span class="shop-item-cost">${item.cost}¢</span>
+        <button class="btn-buy" data-id="${item.id}" data-cost="${item.cost}" ${ok?'':'disabled'}>${ok?'PURCHASE':'LOCKED'}</button>
+      </div>`;
+    grid.appendChild(el);
+  });
+}
+
+function buyItem(itemId, cost) {
+  if (S.credits < cost) { Audio.error(); toast('INSUFFICIENT CREDITS','warn'); return; }
+  const it = SHOP_ITEMS.find(x=>x.id===itemId);
+  S.credits -= cost; save(); renderHeader();
+  renderShop();
+  Audio.cash();
+  toast(`✓ ${it?.name || itemId} PURCHASED`);
+}
+
+/* ─────────────────────────── MODALS ─────────────────────────── */
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+/* ─────────────────────────── TOAST ─────────────────────────── */
+function toast(msg, type='') {
+  const el=document.createElement('div'); el.className='toast '+(type||'');
+  el.textContent=msg; document.getElementById('toastWrap').appendChild(el);
+  setTimeout(()=>el.remove(),3100);
+}
+
+/* ─────────────────────────── EVENTS ─────────────────────────── */
+// Deploy habit
+document.getElementById('deployBtn').addEventListener('click',()=>{
+  const inp=document.getElementById('habitInput'), v=inp.value.trim();
+  if(!v){Audio.error();return;}
+  addHabit(v); inp.value=''; inp.focus();
+});
+document.getElementById('habitInput').addEventListener('keydown',e=>{
+  if(e.key==='Enter') document.getElementById('deployBtn').click();
+});
+
+// Habits list delegation
+document.getElementById('habitsList').addEventListener('click',e=>{
+  const chk=e.target.closest('[data-action="check"]');
+  const del=e.target.closest('[data-action="delete"]');
+  if(chk) completeHabit(Number(chk.dataset.id));
+  if(del) deleteHabit(Number(del.dataset.id));
+});
+
+// Shop
+document.getElementById('shopFab').addEventListener('click',()=>{ renderShop(); openModal('shopModal'); });
+document.getElementById('shopClose').addEventListener('click',()=>closeModal('shopModal'));
+document.getElementById('shopModal').addEventListener('click',e=>{ if(e.target===document.getElementById('shopModal')) closeModal('shopModal'); });
+document.getElementById('shopGrid').addEventListener('click',e=>{
+  const b=e.target.closest('.btn-buy');
+  if(b&&!b.disabled) buyItem(b.dataset.id, Number(b.dataset.cost));
+});
+
+// Level up modal
+document.getElementById('luClose').addEventListener('click',()=>closeModal('luModal'));
+document.getElementById('luContinue').addEventListener('click',()=>closeModal('luModal'));
+document.getElementById('luModal').addEventListener('click',e=>{ if(e.target===document.getElementById('luModal')) closeModal('luModal'); });
+
+// Init audio on first interaction
+document.addEventListener('click',()=>{ try{Audio.ctx();}catch{} },{once:true});
+
+/* ─────────────────────────── BOOT ─────────────────────────── */
+dailyReset();
+ensureHistoryToday();
+save();
+render();
+
+console.log('%cHABITCORE v3.1 · DATA LOG ONLINE', 'color:#00ff9d;font-family:monospace;font-size:14px;font-weight:900;');
+
+/* ─────────────────────────── UTIL ─────────────────────────── */
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+</script>
 </body>
 </html>
